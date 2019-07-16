@@ -1,0 +1,58 @@
+// function decoder for radio-sensors
+// table of msg fields:
+// n | Id        | example   | lim. values     | lim rapr.  | n. bytes | start pos.
+// 1 | TXT       | ictp      | 8 char          | 8 char     | 8        | 0
+// 2 | PS        | 0         | mr: 0 .. 255    | 0 .. 0xFF  | 1        | 8
+// 3 | V_MCU     | 2.45      | 0 .. 55         | 0 .. 0xFF  | 1        | 9
+// 4 | V_IN      | 3.21      | 0 .. 55         | 0 .. 0xFF  | 1        | 10
+// 5 | V_A3      | 86        | mr: 0 .. 255    | 0 .. 0xFF  | 1        | 11
+// 6 | T_BME280  | 14.88     | -40 .. +85 C    | 0 .. 1250  | 2        | 12
+// 7 | RH_BME280 | 65.06     | +9000...-500 m  | 0 .. 95000 | 3        | 14
+// 8 | P_BME280  | 100448.50 | 300 .. 1100 hPa | 0 .. 8000  | 2        | 17
+// 9 | DELAY     | 0         | mr: 0 .. 255    | 0 .. 0xFF  | 1        | 19
+// 
+// Index range of array: 0..19
+
+function Decoder(bytes, port) {
+    // Decode an uplink message from a buffer
+    // (array) of bytes to an object of fields.
+    var decoded = {};
+    var txt=new Array(8);
+    var i;
+    var intValue;
+
+    for(i=0;i<8;i++)
+    {
+        txt[i]=bytes[i];
+    }
+    decoded.TXT       = String.fromCharCode.apply(null, txt);
+
+    intValue = bytes[8];
+    decoded.PS        = intValue;
+	
+    intValue = bytes[9];
+    decoded.V_MCU     = (intValue / 10.0);
+	
+    intValue = bytes[10];
+    decoded.V_IN      = (intValue / 10.0);
+	
+    intValue = bytes[11];
+    decoded.V_A3      = intValue;
+	
+    intValue = ((bytes[12]<<8)>>>0) + bytes[13];
+    intValue = intValue - 400;
+    decoded.T_BME280  = (intValue / 10.0);
+	
+    intValue = ((bytes[14]<<16)>>>0) + ((bytes[15]<<8)>>>0) + bytes[16];
+    intValue = intValue - 5000;
+    decoded.RH_BME280 = (intValue / 10.0);
+
+    intValue = ((bytes[17]<<8)>>>0) + bytes[18];
+    intValue = intValue + 3000;
+    decoded.P_BME280  =  (intValue / 10.0);
+	
+    intValue = bytes[19];
+    decoded.DELAY     = intValue;
+
+    return decoded;
+}
